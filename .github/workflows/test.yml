@@ -19,9 +19,9 @@ jobs:
       - name: Get latest CMake
         uses: lukka/get-cmake@latest
 
-      - name: Install numpy
+      - name: Install Python deps
         shell: bash
-        run: pip3 install numpy
+        run: pip3 install numpy matplotlib
 
       - name: Checkout code
         uses: actions/checkout@v2
