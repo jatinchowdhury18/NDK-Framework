@@ -19,6 +19,9 @@ jobs:
       - name: Get latest CMake
         uses: lukka/get-cmake@latest
 
+      - name: Install numpy
+        uses: pip3 install numpy
+
       - name: Checkout code
         uses: actions/checkout@v2
 
