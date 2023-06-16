@@ -21,6 +21,8 @@ class ElementInfo:
 class NetlistInfo:
     num_nodes: int = 0
     num_resistors: int = 0
+    num_var_voltages: int = 0
+    num_fixed_voltages: int = 0
     num_voltages: int = 0
     num_pots: int = 0
     num_states: int = 0
@@ -70,6 +72,10 @@ def parse_netlist(netlist: list[str]):
             else:
                 info.num_pots += 1
         if el.element is Element.Voltage:
+            if el.is_constant:
+                info.num_fixed_voltages += 1
+            else:
+                info.num_var_voltages += 1
             info.num_voltages += 1
         if el.element in [Element.Capacitor, Element.Inductor]:
             info.num_states += 1

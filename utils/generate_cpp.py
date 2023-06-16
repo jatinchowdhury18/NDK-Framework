@@ -149,7 +149,7 @@ def generate_NDK_matrices():
 
     return lines
 
-def generate_reset_states(config_json, netlist_info):
+def generate_reset_states(config_json):
     lines = []
     lines.append("    // reset state vectors")
     lines.append("    for (size_t ch = 0; ch < MAX_NUM_CHANNELS; ++ch)\n    {")
@@ -165,26 +165,48 @@ def generate_reset_states(config_json, netlist_info):
 
     return lines
 
-def generate_process_setup(netlist_info: NetlistInfo, circuit_outputs: list[int]):
-    lines = []
-
-    u_inits = []
+def generate_update_pots(netlist_info: NetlistInfo):
+    u_fixed = []
     for el in netlist_info.elements:
         if el.element is Element.Voltage:
             if el.is_constant:
-                u_inits.append(el.name)
-            else:
-                u_inits.append("(T) 0")
-    lines.append(f"    Eigen::Vector<T, num_voltages> u_n {{ {', '.join(u_inits)} }};")
+                u_fixed.append(el.name)
+    u_fixed_str = ', '.join(u_fixed)
 
-    lines.append(f"    Eigen::Vector<T, num_nl_ports> p_n;")
-    lines.append(f"    Eigen::Matrix<T, num_nl_ports, num_nl_ports> Jac = Eigen::Matrix<T, num_nl_ports, num_nl_ports>::Zero();")
-    lines.append(f"    Eigen::Vector<T, num_nl_ports> i_n;")
-    lines.append(f"    Eigen::Vector<T, num_nl_ports> F_min;")
-    lines.append(f"    Eigen::Matrix<T, num_nl_ports, num_nl_ports> A_solve;")
-    lines.append(f"    const Eigen::Matrix<T, num_nl_ports, num_nl_ports> eye = Eigen::Matrix<T, num_nl_ports, num_nl_ports>::Identity();")
-    lines.append(f"    Eigen::Vector<T, num_nl_ports> delta_v;")
-    lines.append(f"    Eigen::Vector<T, num_outputs> y_n;")
+    lines = []
+    lines.append(f"    Eigen::Matrix<T, num_pots, num_pots> Rv = Eigen::Matrix<T, num_pots, num_pots>::Zero();")
+    for idx in range(netlist_info.num_pots):
+        lines.append(f"    Rv ({idx}, {idx}) = pot_values[{idx}];")    
+    lines.append("    Eigen::Matrix<T, num_pots, num_pots> Rv_Q_inv = (Rv + Q).inverse();")
+    lines.append("")
+    lines.append("    A_mat = A0_mat - (two_Z_Gx * (Ux * (Rv_Q_inv * Ux.transpose())));")
+    lines.append("    Eigen::Matrix<T, num_states, num_voltages> B_mat = B0_mat - (two_Z_Gx * (Ux * (Rv_Q_inv * Uu.transpose())));")
+    lines.append("    B_mat_var = B_mat.leftCols<num_voltages_variable>();")
+    lines.append(f"    B_u_fix = B_mat.rightCols<num_voltages_constant>() * Eigen::Vector<T, num_voltages_constant> {{ {u_fixed_str} }};")
+    lines.append("    C_mat = C0_mat - (two_Z_Gx * (Ux * (Rv_Q_inv * Un.transpose())));")
+    lines.append("    D_mat = D0_mat - (Uo * (Rv_Q_inv * Ux.transpose()));")
+    lines.append("    Eigen::Matrix<T, num_outputs, num_voltages> E_mat = E0_mat - (Uo * (Rv_Q_inv * Uu.transpose()));")
+    lines.append("    E_mat_var = E_mat.leftCols<num_voltages_variable>();")
+    lines.append(f"    E_u_fix = E_mat.rightCols<num_voltages_constant>() * Eigen::Vector<T, num_voltages_constant> {{ {u_fixed_str} }};")
+    lines.append("    F_mat = F0_mat - (Uo * (Rv_Q_inv * Un.transpose()));")
+    lines.append("    G_mat = G0_mat - (Un * (Rv_Q_inv * Ux.transpose()));")
+    lines.append("    Eigen::Matrix<T, num_nl_ports, num_voltages> H_mat = H0_mat - (Un * (Rv_Q_inv * Uu.transpose()));")
+    lines.append("    H_mat_var = H_mat.leftCols<num_voltages_variable>();")
+    lines.append(f"    H_u_fix = H_mat.rightCols<num_voltages_constant>() * Eigen::Vector<T, num_voltages_constant> {{ {u_fixed_str} }};")
+    lines.append("    K_mat = K0_mat - (Un * (Rv_Q_inv * Un.transpose()));")
+    return lines
+
+def generate_process_setup():
+    lines = []
+    lines.append("    Eigen::Vector<T, num_voltages_variable> u_n_var;")
+    lines.append("    Eigen::Vector<T, num_nl_ports> p_n;")
+    lines.append("    Eigen::Matrix<T, num_nl_ports, num_nl_ports> Jac = Eigen::Matrix<T, num_nl_ports, num_nl_ports>::Zero();")
+    lines.append("    Eigen::Vector<T, num_nl_ports> i_n;")
+    lines.append("    Eigen::Vector<T, num_nl_ports> F_min;")
+    lines.append("    Eigen::Matrix<T, num_nl_ports, num_nl_ports> A_solve;")
+    lines.append("    const Eigen::Matrix<T, num_nl_ports, num_nl_ports> eye = Eigen::Matrix<T, num_nl_ports, num_nl_ports>::Identity();")
+    lines.append("    Eigen::Vector<T, num_nl_ports> delta_v;")
+    lines.append("    Eigen::Vector<T, num_outputs> y_n;")
     lines.append("")
 
     return lines
@@ -193,8 +215,8 @@ def generate_process_sample(config_json, netlist_info: NetlistInfo, process_dtyp
     lines = []
 
     # TODO: what if there's more than one input, or it it's not index 0?
-    lines.append("        u_n (0) = (T) sample;")
-    lines.append("        p_n.noalias() = G_mat * x_n[ch] + H_mat * u_n;")
+    lines.append("        u_n_var (0) = (T) sample;")
+    lines.append("        p_n.noalias() = G_mat * x_n[ch] + H_mat_var * u_n_var + H_u_fix;")
     lines.append("")
 
     if netlist_info.num_nl_ports > 0:
@@ -250,9 +272,9 @@ def generate_process_sample(config_json, netlist_info: NetlistInfo, process_dtyp
         lines.append("        calc_currents();")
         lines.append("")
 
-    lines.append("        y_n.noalias() = D_mat * x_n[ch] + E_mat * u_n + F_mat * i_n;")
+    lines.append("        y_n.noalias() = D_mat * x_n[ch] + E_mat_var * u_n_var + E_u_fix + F_mat * i_n;")
     lines.append(f"        sample = ({process_dtype}) y_n (0);")
-    lines.append("        x_n[ch] = A_mat * x_n[ch] + B_mat * u_n + C_mat * i_n;")
+    lines.append("        x_n[ch] = A_mat * x_n[ch] + B_mat_var * u_n_var + B_u_fix + C_mat * i_n;")
 
     return lines
 
@@ -284,32 +306,18 @@ def generate_cpp(config_json, netlist_info, outputs):
     cpp_file.append(generate_Gx_Z(netlist_info))
     cpp_file.extend(generate_N_matrices(netlist_info, outputs))
     cpp_file.extend(generate_NDK_matrices())
-    cpp_file.extend(generate_reset_states(config_json, netlist_info))
+    cpp_file.extend(generate_reset_states(config_json))
     cpp_file.append("}\n")
 
     # update method
     cpp_file.append(f"void {struct_name}::update_pots (const std::array<T, num_pots>& pot_values)\n{{")
-    # const auto Rv = Eigen::Matrix<double, 2, 2> { { (1.0 - alpha) * VR1, 0.0 }, { 0.0, alpha * VR1 } };
-    cpp_file.append(f"    Eigen::Matrix<T, num_pots, num_pots> Rv = Eigen::Matrix<T, num_pots, num_pots>::Zero();")
-    for idx in range(netlist_info.num_pots):
-        cpp_file.append(f"    Rv ({idx}, {idx}) = pot_values[{idx}];")    
-    cpp_file.append(f"    Eigen::Matrix<T, num_pots, num_pots> Rv_Q_inv = (Rv + Q).inverse();")
-    cpp_file.append("")
-    cpp_file.append("    A_mat = A0_mat - (two_Z_Gx * (Ux * (Rv_Q_inv * Ux.transpose())));")
-    cpp_file.append("    B_mat = B0_mat - (two_Z_Gx * (Ux * (Rv_Q_inv * Uu.transpose())));")
-    cpp_file.append("    C_mat = C0_mat - (two_Z_Gx * (Ux * (Rv_Q_inv * Un.transpose())));")
-    cpp_file.append("    D_mat = D0_mat - (Uo * (Rv_Q_inv * Ux.transpose()));")
-    cpp_file.append("    E_mat = E0_mat - (Uo * (Rv_Q_inv * Uu.transpose()));")
-    cpp_file.append("    F_mat = F0_mat - (Uo * (Rv_Q_inv * Un.transpose()));")
-    cpp_file.append("    G_mat = G0_mat - (Un * (Rv_Q_inv * Ux.transpose()));")
-    cpp_file.append("    H_mat = H0_mat - (Un * (Rv_Q_inv * Uu.transpose()));")
-    cpp_file.append("    K_mat = K0_mat - (Un * (Rv_Q_inv * Un.transpose()));")
+    cpp_file.extend(generate_update_pots(netlist_info))
     cpp_file.append("}\n")
 
     # process method
     process_dtype = config_json['process_data_type'] if 'process_data_type' in config_json else "T"
     cpp_file.append(f"void {struct_name}::process (std::span<{process_dtype}> channel_data, size_t ch) noexcept\n{{")
-    cpp_file.extend(generate_process_setup(netlist_info, outputs))
+    cpp_file.extend(generate_process_setup())
     cpp_file.append("    for (auto& sample : channel_data)\n    {")
     cpp_file.extend(generate_process_sample(config_json, netlist_info, process_dtype))
     cpp_file.append("    }")
