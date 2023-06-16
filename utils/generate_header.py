@@ -11,6 +11,9 @@ def generate_header(config_json, netlist_info: NetlistInfo, num_outputs):
     header_file.append(" */")
 
     header_file.append("#pragma once\n")
+    header_file.append("#include <array>")
+    header_file.append("#include <cmath>")
+    header_file.append("#include <span>\n")
     header_file.append("// START USER INCLUDES")
     for include_line in config_json['header_includes']:
         header_file.append(include_line)

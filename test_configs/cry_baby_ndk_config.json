@@ -26,7 +26,7 @@
     ],
     "output_nodes": [ 8 ],
     "header_includes": [
-        "#include <modules/Eigen/Eigen/Dense>"
+        "#include <Eigen/Dense>"
     ],
     "cpp_struct_entries": [
         "    static constexpr size_t MAX_NUM_CHANNELS = 2;",
@@ -61,6 +61,5 @@
         "constexpr auto BetaR_Q2 = 4.0;"
     ],
     "initial_state_v_n": "3.9, 4.5, 3.9, 4.5",
-    "nr_exit_condition": "delta > 1.0e-2 && ++nIters < 8",
-    "process_data_type": "float"
+    "nr_exit_condition": "delta > 1.0e-2 && ++nIters < 8"
 }

@@ -1,1 +1,9 @@
 __pycache__/
+build*/
+cmake-build*/
+.idea/
+.vscode/
+
+# Test-generated files
+*.png
+tests/cry_baby_test/CryBabyNDK.*
