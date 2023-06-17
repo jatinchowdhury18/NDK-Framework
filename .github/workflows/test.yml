@@ -29,3 +29,8 @@ jobs:
       - name: Test
         shell: bash
         run: bash run_tests.sh
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ndk-plots
+          path: *.png

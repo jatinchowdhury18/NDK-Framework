@@ -1,0 +1,47 @@
+{
+    "struct_name": "BigMuff2D",
+    "netlist": [
+        "Vi 1 0",
+        "R17 3 4",
+        "R18 4 7",
+        "R19 2 3",
+        "R20 3 0",
+        "R21 5 0",
+        "C5 1 2",
+        "C6 3 6",
+        "C12 3 4",
+        "Q3 3 4 5 # Base Collector Emitter",
+        "D4 4 6 # Anode Cathode",
+        "D5 6 4 # Anode Cathode",
+        "Vcc 7 0 FIXED"
+    ],
+    "output_nodes": [ 4 ],
+    "header_includes": [
+        "#include <Eigen/Dense>"
+    ],
+    "cpp_struct_entries": [
+        "    static constexpr size_t MAX_NUM_CHANNELS = 1;"
+    ],
+    "cpp_namespace_entries": [
+        "constexpr auto R17 = 470.0e3;",
+        "constexpr auto R18 = 10.0e3;",
+        "constexpr auto R19 = 10.0e3;",
+        "constexpr auto R20 = 100.0e3;",
+        "constexpr auto R21 = 150.0;",
+        "constexpr auto C5 = 100.0e-9;",
+        "constexpr auto C6 = 1.0e-6;",
+        "constexpr auto C12 = 470.0e-12;",
+        "constexpr auto Vcc = 9.0;",
+        "constexpr auto Vt = 26.0e-3;",
+        "constexpr auto Is_Q3 = 7.8e-14;",
+        "constexpr auto BetaF_Q3 = 436.8;",
+        "constexpr auto AlphaF_Q3 = (1.0 + BetaF_Q3) / BetaF_Q3;",
+        "constexpr auto BetaR_Q3 = 44.14;",
+        "constexpr auto Is_D4 = 2.52e-9;",
+        "constexpr auto n_D4 = 1.752;",
+        "constexpr auto Is_D5 = 2.52e-9;",
+        "constexpr auto n_D5 = 1.752;"
+    ],
+    "initial_state_v_n": "3.2994604461654409, 3.8863699732882431, 0.25817768163987981, -0.25817768163987981",
+    "nr_exit_condition": "delta > 1.0e-4 && ++nIters < 10"
+}

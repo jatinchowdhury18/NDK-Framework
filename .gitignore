@@ -7,3 +7,4 @@ cmake-build*/
 # Test-generated files
 *.png
 tests/cry_baby_test/CryBabyNDK.*
+tests/big_muff_test/BigMuff*.*

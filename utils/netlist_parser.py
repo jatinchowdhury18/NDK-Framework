@@ -6,10 +6,16 @@ class Element(Enum):
     Capacitor = 2
     Inductor = 3
     Voltage = 4
-    Diode = 5 # TODO!
-    Transistor = 6
+    Diode = 5
+    DiodePair = 6
+    Transistor = 7
 
-ONE_PORT_ELEMENTS = [Element.Resistor, Element.Capacitor, Element.Voltage, Element.Inductor]
+ONE_PORT_ELEMENTS = [Element.Resistor,
+                     Element.Capacitor,
+                     Element.Voltage,
+                     Element.Inductor,
+                     Element.Diode,
+                     Element.DiodePair]
 
 @dataclass
 class ElementInfo:
@@ -41,6 +47,10 @@ def parse_netlist(netlist: list[str]):
             return Element.Voltage
         elif tag[0] == 'Q':
             return Element.Transistor
+        elif tag[0:2] == 'DP':
+            return Element.DiodePair
+        elif tag[0] == 'D':
+            return Element.Diode
         assert False, f"Unknown element type!"
 
     info = NetlistInfo()
@@ -81,6 +91,8 @@ def parse_netlist(netlist: list[str]):
             info.num_states += 1
         if el.element is Element.Transistor:
             info.num_nl_ports += 2
+        if el.element is Element.Diode or el.element is Element.DiodePair:
+            info.num_nl_ports += 1
         
 
     print(f"Circuit contains: {info.num_nodes} nodes, {info.num_voltages} voltage sources, {info.num_resistors} resistors, {info.num_states} states, {info.num_pots} pots, {info.num_nl_ports} nonlinear ports")
