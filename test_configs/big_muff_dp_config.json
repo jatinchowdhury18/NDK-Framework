@@ -1,6 +1,7 @@
 {
     "struct_name": "BigMuffDP",
     "netlist": [
+        "Vcc 7 0 FIXED",
         "Vi 1 0",
         "R17 3 4",
         "R18 4 7",
@@ -11,8 +12,7 @@
         "C6 3 6",
         "C12 3 4",
         "Q3 3 4 5 # Base Collector Emitter",
-        "DP45 4 6",
-        "Vcc 7 0 FIXED"
+        "DP45 4 6"
     ],
     "output_nodes": [ 4 ],
     "header_includes": [

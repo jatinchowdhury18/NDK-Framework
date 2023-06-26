@@ -73,7 +73,10 @@ def parse_netlist(netlist: list[str]):
             el.name = line_parts[0]
             el.element = el_type
 
-        info.elements.append(el)
+        if el.element is Element.Voltage and not el.is_constant:
+            info.elements.insert(0, el)
+        else:
+            info.elements.append(el)
 
         info.num_nodes = max(info.num_nodes, max(el.nodes))
         if el.element is Element.Resistor:

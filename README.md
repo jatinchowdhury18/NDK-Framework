@@ -2,21 +2,21 @@
 
 Undocumented netlist gotchas:
 - Ground is node 0
-- Netlist entried go from positive node to negative
+- Netlist entries go from positive node to negative
 - Diodes go from anode to cathode
 - Transistors go "Base, Collector, Emitter"
-- Variable voltage sources must come before fixed voltgae sources
 - Currently only supports one "input" and one "output"
 
 Supported elements:
-- Resistor
-- Capacitor
-- Inductor
-- Voltage Source
-- Diode
-- Diode Pair
-- Transistor
+- Resistor (R)
+- Capacitor (C)
+- Inductor (L)
+- Voltage Source (V)
+- Diode (D)
+- Diode Pair (DP)
+- Transistor (Q)
 
 Unsupported elements:
 - Triode
 - Op-Amp
+- OTA
