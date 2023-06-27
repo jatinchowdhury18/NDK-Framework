@@ -200,16 +200,19 @@ def generate_reset_states(config_json):
 
 def generate_update_pots(netlist_info: NetlistInfo):
     u_fixed = []
+    pots = []
     for el in netlist_info.elements:
-        if el.element is Element.Voltage:
-            if el.is_constant:
-                u_fixed.append(el.name)
+        if el.element is Element.Voltage and el.is_constant:
+            u_fixed.append(el.name)
+        if el.element is Element.Resistor and not el.is_constant:
+            pots.append(el)
+        
     u_fixed_str = ', '.join(u_fixed)
 
     lines = []
     lines.append(f"    Eigen::Matrix<T, num_pots, num_pots> Rv = Eigen::Matrix<T, num_pots, num_pots>::Zero();")
     for idx in range(netlist_info.num_pots):
-        lines.append(f"    Rv ({idx}, {idx}) = pot_values[{idx}];")    
+        lines.append(f"    Rv ({idx}, {idx}) = pot_values[{idx}]; // {pots[idx].name}")
     lines.append("    Eigen::Matrix<T, num_pots, num_pots> Rv_Q_inv = (Rv + Q).inverse();")
     lines.append("")
     lines.append("    A_mat = A0_mat - (two_Z_Gx * (Ux * (Rv_Q_inv * Ux.transpose())));")
