@@ -74,7 +74,12 @@ def parse_netlist(netlist: list[str]):
             el.element = el_type
 
         if el.element is Element.Voltage and not el.is_constant:
-            info.elements.insert(0, el)
+            insert_idx = 0
+            for idx, el_test in enumerate(info.elements):
+                if el_test is not Element.Voltage or el_test.is_constant:
+                    insert_idx = idx + 1
+                    break
+            info.elements.insert(insert_idx, el)
         else:
             info.elements.append(el)
 

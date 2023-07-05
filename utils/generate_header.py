@@ -82,11 +82,15 @@ def generate_header(config_json, netlist_info: NetlistInfo, num_outputs):
         header_file.append(f"    Eigen::Matrix<T, num_states, num_states> two_Z_Gx;")
         header_file.append("")
 
+    header_file.append(f"    void reset_state();")
     header_file.append(f"    void reset (T fs);")
     if netlist_info.num_pots > 0:
         header_file.append(f"    void update_pots (const std::array<T, num_pots>& pot_values);")
     process_dtype = config_json['process_data_type'] if 'process_data_type' in config_json else "T"
-    header_file.append(f"    void process (std::span<{process_dtype}> channel_data, size_t channel_index) noexcept;")
+    if netlist_info.num_var_voltages == 1:
+        header_file.append(f"    void process (std::span<{process_dtype}> channel_data, size_t channel_index) noexcept;")
+    elif netlist_info.num_var_voltages > 1:
+        header_file.append(f"    void process (const std::array<std::span<{process_dtype}>, num_voltages_variable>& channel_data, size_t channel_index) noexcept;")
 
     header_file.append("};")
 

@@ -250,8 +250,16 @@ def generate_process_setup():
 def generate_process_sample(config_json, netlist_info: NetlistInfo, process_dtype):
     lines = []
 
-    # TODO: what if there's more than one input, or it it's not index 0?
-    lines.append("        u_n_var (0) = (T) sample;")
+    if netlist_info.num_var_voltages == 1:
+        lines.append("        u_n_var (0) = (T) channel_data[n];")
+    else:
+        var_voltages = []
+        for el in netlist_info.elements:
+            if el.element is Element.Voltage and not el.is_constant:
+                var_voltages.append(el)
+        for idx in range(netlist_info.num_var_voltages):
+            v_name = var_voltages[idx].name
+            lines.append(f"        u_n_var ({idx}) = (T) channel_data[{idx}][n]; // {v_name}")
     lines.append("        p_n.noalias() = G_mat * x_n[ch] + H_mat_var * u_n_var + H_u_fix;")
     lines.append("")
 
@@ -346,7 +354,10 @@ def generate_process_sample(config_json, netlist_info: NetlistInfo, process_dtyp
         lines.append("")
 
     lines.append("        y_n.noalias() = D_mat * x_n[ch] + E_mat_var * u_n_var + E_u_fix + F_mat * i_n;")
-    lines.append(f"        sample = ({process_dtype}) y_n (0);")
+    if netlist_info.num_var_voltages == 1:
+        lines.append(f"        channel_data[n] = ({process_dtype}) y_n (0);")
+    else:
+        lines.append(f"        channel_data[0][n] = ({process_dtype}) y_n (0);")
     lines.append("        x_n[ch] = A_mat * x_n[ch] + B_mat_var * u_n_var + B_u_fix + C_mat * i_n;")
 
     return lines
@@ -373,13 +384,17 @@ def generate_cpp(config_json, netlist_info: NetlistInfo, outputs):
     if 'cpp_namespace' in config_json:
         cpp_file.append(f"namespace {config_json['cpp_namespace']} {{")
 
-    # reset method
+    # reset methods
+    cpp_file.append(f"void {struct_name}::reset_state()\n{{")
+    cpp_file.extend(generate_reset_states(config_json))
+    cpp_file.append("}\n")
+
     cpp_file.append(f"void {struct_name}::reset (T fs)\n{{")
     cpp_file.append(generate_Gr(netlist_info))
     cpp_file.append(generate_Gx_Z(netlist_info))
     cpp_file.extend(generate_N_matrices(netlist_info, outputs))
     cpp_file.extend(generate_NDK_matrices(netlist_info))
-    cpp_file.extend(generate_reset_states(config_json))
+    cpp_file.append("    reset_state();")
     cpp_file.append("}\n")
 
     # update method
@@ -390,9 +405,12 @@ def generate_cpp(config_json, netlist_info: NetlistInfo, outputs):
 
     # process method
     process_dtype = config_json['process_data_type'] if 'process_data_type' in config_json else "T"
-    cpp_file.append(f"void {struct_name}::process (std::span<{process_dtype}> channel_data, size_t ch) noexcept\n{{")
+    if netlist_info.num_var_voltages == 1:
+        cpp_file.append(f"void {struct_name}::process (std::span<{process_dtype}> channel_data, size_t ch) noexcept\n{{")
+    else:
+        cpp_file.append(f"void {struct_name}::process (const std::array<std::span<{process_dtype}>, num_voltages_variable>& channel_data, size_t ch) noexcept\n{{")
     cpp_file.extend(generate_process_setup())
-    cpp_file.append("    for (auto& sample : channel_data)\n    {")
+    cpp_file.append("    for (size_t n = 0; n < channel_data.size(); ++n)\n    {")
     cpp_file.extend(generate_process_sample(config_json, netlist_info, process_dtype))
     cpp_file.append("    }")
     cpp_file.append("}")
