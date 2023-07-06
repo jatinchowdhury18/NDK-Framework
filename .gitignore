@@ -8,3 +8,4 @@ cmake-build*/
 *.png
 tests/cry_baby_test/CryBabyNDK.*
 tests/big_muff_test/BigMuff*.*
+tests/rc_lowpass_test/RCLowpassNDK*.*

@@ -7,7 +7,7 @@ def generate_Gr(netlist_info):
     for el in netlist_info.elements:
         if el.element is Element.Resistor and el.is_constant:
             Gr_entries.append(f"(T) 1 / {el.name}")
-    return f"    const auto Gr = Eigen::DiagonalMatrix<T, num_resistors> {{ {', '.join(Gr_entries)} }};"
+    return f"    const auto Gr = Eigen::DiagonalMatrix<T, num_resistors> ({', '.join(Gr_entries)});"
 
 def generate_Gx_Z(netlist_info):
     Gx_entries = []
@@ -19,8 +19,8 @@ def generate_Gx_Z(netlist_info):
         elif el.element is Element.Inductor:
             Gx_entries.append(f"(T) 1 / ((T) 2 * fs * {el.name})")
             Z_entries.append("-1")
-    Gx =  f"    const auto Gx = Eigen::DiagonalMatrix<T, num_states> {{ {', '.join(Gx_entries)} }};"
-    Z =  f"    const auto Z = Eigen::DiagonalMatrix<T, num_states> {{ {', '.join(Z_entries)} }};"
+    Gx =  f"    const auto Gx = Eigen::DiagonalMatrix<T, num_states> ({', '.join(Gx_entries)});"
+    Z =  f"    const auto Z = Eigen::DiagonalMatrix<T, num_states> ({', '.join(Z_entries)});"
     return f"{Gx}\n{Z}\n"
 
 def generate_N_matrices(netlist_info: NetlistInfo, outputs):

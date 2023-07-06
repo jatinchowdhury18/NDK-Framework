@@ -16,5 +16,13 @@ CPMAddPackage(
     GIT_TAG main
 )
 
+CPMAddPackage(
+    NAME kissfft
+    GIT_REPOSITORY https://github.com/mborgerding/kissfft
+    GIT_TAG master
+    OPTIONS "KISSFFT_DATATYPE double" "KISSFFT_STATIC ON" "KISSFFT_TEST OFF" "KISSFFT_TOOLS OFF" "KISSFFT_USE_ALLOCA ON"
+)
+
 add_subdirectory(cry_baby_test)
 add_subdirectory(big_muff_test)
+add_subdirectory(rc_lowpass_test)

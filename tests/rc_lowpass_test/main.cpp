@@ -3,7 +3,7 @@
 
 namespace plt = matplotlibcpp;
 
-#include "CryBabyNDK.h"
+#include "RCLowpassNDK.h"
 
 namespace
 {
@@ -21,9 +21,9 @@ int main()
 
     std::vector<double> output_data (128, 0.0);
 
-    CryBabyNDK model;
+    RCLowpassNDK model;
     model.reset (sample_rate);
-    model.update_pots ({ 0.5 * CryBabyNDK::VR1, 0.5 * CryBabyNDK::VR1 });
+    model.update_pots ({ 1.0 / (2.0 * M_PI * RCLowpassNDK::C1 * 1000.0), 1.0 / (2.0 * M_PI * RCLowpassNDK::C2 * 1000.0) });
 
     do
     {
@@ -38,7 +38,7 @@ int main()
                    freq_helpers::compute_frequency_response (input_data, output_data));
     plt::grid (true);
     plt::xlim (start_freq, stop_freq);
-    plt::save ("cry_baby.png");
+    plt::save ("rc_lowpass.png");
 
     return 0;
 }
