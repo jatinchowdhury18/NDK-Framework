@@ -59,14 +59,43 @@ def generate_N_matrices(netlist_info: NetlistInfo, outputs):
     lines.append("    };\n")
 
     # Nu matrix
-    lines.append(f"    const Eigen::Matrix<T, num_voltages, num_nodes> Nu {{")
-    for el in netlist_info.elements:
-        if el.element is Element.Voltage:
-            node_map = ["+0"] * netlist_info.num_nodes
-            if el.nodes[0] > 0: node_map[el.nodes[0] - 1] = "+1" # positive node
-            if el.nodes[1] > 0: node_map[el.nodes[1] - 1] = "-1" # negative node
-            lines.append(f"        {{ {', '.join(node_map)} }},")
-    lines.append("    };\n")
+    if netlist_info.num_op_amps > 0:
+        lines.append(f"    const Eigen::Matrix<T, num_voltages + num_op_amps, num_nodes> Nui {{")
+        for el in netlist_info.elements:
+            if el.element is Element.Voltage:
+                node_map = ["+0"] * netlist_info.num_nodes
+                if el.nodes[0] > 0: node_map[el.nodes[0] - 1] = "+1" # positive node
+                if el.nodes[1] > 0: node_map[el.nodes[1] - 1] = "-1" # negative node
+                lines.append(f"        {{ {', '.join(node_map)} }},")
+        for el in netlist_info.elements:
+            if el.element is Element.IdealOpAmp:
+                node_map = ["+0"] * netlist_info.num_nodes
+                if el.nodes[0] > 0: node_map[el.nodes[0] - 1] = "-1" # non-inverting input
+                if el.nodes[1] > 0: node_map[el.nodes[1] - 1] = "+1" # inverting input
+                lines.append(f"        {{ {', '.join(node_map)} }},")
+        lines.append("    };\n")
+        lines.append(f"    const Eigen::Matrix<T, num_voltages + num_op_amps, num_nodes> Nuo {{")
+        for el in netlist_info.elements:
+            if el.element is Element.Voltage:
+                node_map = ["+0"] * netlist_info.num_nodes
+                if el.nodes[0] > 0: node_map[el.nodes[0] - 1] = "+1" # positive node
+                if el.nodes[1] > 0: node_map[el.nodes[1] - 1] = "-1" # negative node
+                lines.append(f"        {{ {', '.join(node_map)} }},")
+        for el in netlist_info.elements:
+            if el.element is Element.IdealOpAmp:
+                node_map = ["+0"] * netlist_info.num_nodes
+                if el.nodes[2] > 0: node_map[el.nodes[2] - 1] = "+1" # output
+                lines.append(f"        {{ {', '.join(node_map)} }},")
+        lines.append("    };\n")
+    else:
+        lines.append(f"    const Eigen::Matrix<T, num_voltages, num_nodes> Nu {{")
+        for el in netlist_info.elements:
+            if el.element is Element.Voltage:
+                node_map = ["+0"] * netlist_info.num_nodes
+                if el.nodes[0] > 0: node_map[el.nodes[0] - 1] = "+1" # positive node
+                if el.nodes[1] > 0: node_map[el.nodes[1] - 1] = "-1" # negative node
+                lines.append(f"        {{ {', '.join(node_map)} }},")
+        lines.append("    };\n")
 
     # Nn matrix
     lines.append(f"    const Eigen::Matrix<T, num_nl_ports, num_nodes> Nn {{")
@@ -102,7 +131,7 @@ def generate_N_matrices(netlist_info: NetlistInfo, outputs):
         lines.append(f"        {{ {', '.join(node_map)} }},")
     lines.append("    };\n")
 
-    lines.append(f"    static constexpr auto S_dim = num_nodes + num_voltages;")
+    lines.append(f"    static constexpr auto S_dim = num_nodes + num_voltages + num_op_amps;")
 
     # Nx_0
     lines.append(f"    Eigen::Matrix<T, num_states, S_dim> Nx_0 = Eigen::Matrix<T, num_states, S_dim>::Zero();",)
@@ -129,8 +158,12 @@ def generate_N_matrices(netlist_info: NetlistInfo, outputs):
     # S0
     lines.append(f"    Eigen::Matrix<T, S_dim, S_dim> S0_mat = Eigen::Matrix<T, S_dim, S_dim>::Zero();")
     lines.append(f"    S0_mat.block<num_nodes, num_nodes> (0, 0) = Nr.transpose() * Gr * Nr + Nx.transpose() * Gx * Nx;")
-    lines.append(f"    S0_mat.block<num_nodes, num_voltages> (0, num_nodes) = Nu.transpose();")
-    lines.append(f"    S0_mat.block<num_voltages, num_nodes> (num_nodes, 0) = Nu;")
+    if netlist_info.num_op_amps > 0:
+        lines.append(f"    S0_mat.block<num_nodes, num_voltages + num_op_amps> (0, num_nodes) = Nuo.transpose();")
+        lines.append(f"    S0_mat.block<num_voltages + num_op_amps, num_nodes> (num_nodes, 0) = Nui;")
+    else:
+        lines.append(f"    S0_mat.block<num_nodes, num_voltages> (0, num_nodes) = Nu.transpose();")
+        lines.append(f"    S0_mat.block<num_voltages, num_nodes> (num_nodes, 0) = Nu;")
     lines.append(f"    Eigen::Matrix<T, S_dim, S_dim> S0_inv = S0_mat.inverse();\n")
 
     return lines

@@ -26,3 +26,4 @@ CPMAddPackage(
 add_subdirectory(cry_baby_test)
 add_subdirectory(big_muff_test)
 add_subdirectory(rc_lowpass_test)
+add_subdirectory(sk_lowpass_test)

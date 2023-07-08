@@ -37,6 +37,7 @@ def generate_header(config_json, netlist_info: NetlistInfo, num_outputs):
     header_file.append(f"    static constexpr int num_pots = {netlist_info.num_pots};")
     header_file.append(f"    static constexpr int num_states = {netlist_info.num_states};")
     header_file.append(f"    static constexpr int num_nl_ports = {netlist_info.num_nl_ports};")
+    header_file.append(f"    static constexpr int num_op_amps = {netlist_info.num_op_amps};")
     header_file.append(f"    static constexpr int num_voltages_variable = {netlist_info.num_var_voltages};")
     header_file.append(f"    static constexpr int num_voltages_constant = {netlist_info.num_fixed_voltages};")
     header_file.append(f"    static constexpr int num_voltages = num_voltages_variable + num_voltages_constant;")

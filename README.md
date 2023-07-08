@@ -15,6 +15,7 @@ Supported elements:
 - Diode (D)
 - Diode Pair (DP)
 - Transistor (Q)
+- Ideal Op-Amp (A)
 
 Unsupported elements:
 - Triode

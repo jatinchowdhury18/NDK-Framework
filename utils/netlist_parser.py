@@ -9,6 +9,7 @@ class Element(Enum):
     Diode = 5
     DiodePair = 6
     Transistor = 7
+    IdealOpAmp = 8
 
 ONE_PORT_ELEMENTS = [Element.Resistor,
                      Element.Capacitor,
@@ -33,6 +34,7 @@ class NetlistInfo:
     num_pots: int = 0
     num_states: int = 0
     num_nl_ports: int = 0
+    num_op_amps: int = 0
     elements: list[ElementInfo] = []
 
 def parse_netlist(netlist: list[str]):
@@ -51,6 +53,8 @@ def parse_netlist(netlist: list[str]):
             return Element.DiodePair
         elif tag[0] == 'D':
             return Element.Diode
+        elif tag[0] == 'A':
+            return Element.IdealOpAmp
         assert False, f"Unknown element type!"
 
     info = NetlistInfo()
@@ -69,6 +73,10 @@ def parse_netlist(netlist: list[str]):
             elif el_type is Element.Voltage and not ('FIXED' in line_parts):
                 el.is_constant = False
         elif el_type is Element.Transistor:
+            el = ElementInfo(nodes=[int(line_parts[1]), int(line_parts[2]), int(line_parts[3])])
+            el.name = line_parts[0]
+            el.element = el_type
+        elif el_type is Element.IdealOpAmp:
             el = ElementInfo(nodes=[int(line_parts[1]), int(line_parts[2]), int(line_parts[3])])
             el.name = line_parts[0]
             el.element = el_type
@@ -101,8 +109,15 @@ def parse_netlist(netlist: list[str]):
             info.num_nl_ports += 2
         if el.element is Element.Diode or el.element is Element.DiodePair:
             info.num_nl_ports += 1
-        
+        if el.element is Element.IdealOpAmp:
+            info.num_op_amps += 1
 
-    print(f"Circuit contains: {info.num_nodes} nodes, {info.num_voltages} voltage sources, {info.num_resistors} resistors, {info.num_states} states, {info.num_pots} pots, {info.num_nl_ports} nonlinear ports")
+    print(f"Circuit contains: {info.num_nodes} nodes, "
+          f"{info.num_voltages} voltage sources, "
+          f"{info.num_resistors} resistors, "
+          f"{info.num_states} states, "
+          f"{info.num_pots} pots, "
+          f"{info.num_nl_ports} nonlinear ports, "
+          f"{info.num_op_amps} op amps")
 
     return info
