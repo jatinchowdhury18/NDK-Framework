@@ -30,7 +30,7 @@ jobs:
         shell: bash
         run: bash run_tests.sh
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: ndk-plots
           path: "*.png"
