@@ -11,6 +11,8 @@ python3 generate_ndk_cpp.py test_configs/rc_lowpass_ndk_config.json
 mv RCLowpassNDK.* tests/rc_lowpass_test
 python3 generate_ndk_cpp.py test_configs/sk_lowpass_ndk_config.json
 mv SKLowpassNDK.* tests/sk_lowpass_test
+python3 generate_ndk_cpp.py test_configs/common_cathode_ndk_config.json
+mv CommonCathodeNDK.* tests/common_cathode_test
 
 echo "Configuring tests..."
 cmake -Bbuild-tests -Stests -DCMAKE_BUILD_TYPE=Release
