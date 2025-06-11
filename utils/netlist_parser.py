@@ -10,6 +10,7 @@ class Element(Enum):
     DiodePair = 6
     Transistor = 7
     IdealOpAmp = 8
+    Triode = 9
 
 ONE_PORT_ELEMENTS = [Element.Resistor,
                      Element.Capacitor,
@@ -55,6 +56,8 @@ def parse_netlist(netlist: list[str]):
             return Element.Diode
         elif tag[0] == 'A':
             return Element.IdealOpAmp
+        elif tag[0] == 'Y':
+            return Element.Triode
         assert False, f"Unknown element type!"
 
     info = NetlistInfo()
@@ -77,6 +80,10 @@ def parse_netlist(netlist: list[str]):
             el.name = line_parts[0]
             el.element = el_type
         elif el_type is Element.IdealOpAmp:
+            el = ElementInfo(nodes=[int(line_parts[1]), int(line_parts[2]), int(line_parts[3])])
+            el.name = line_parts[0]
+            el.element = el_type
+        elif el_type is Element.Triode:
             el = ElementInfo(nodes=[int(line_parts[1]), int(line_parts[2]), int(line_parts[3])])
             el.name = line_parts[0]
             el.element = el_type
@@ -111,6 +118,8 @@ def parse_netlist(netlist: list[str]):
             info.num_nl_ports += 1
         if el.element is Element.IdealOpAmp:
             info.num_op_amps += 1
+        if el.element is Element.Triode:
+            info.num_nl_ports += 2
 
     print(f"Circuit contains: {info.num_nodes} nodes, "
           f"{info.num_voltages} voltage sources, "

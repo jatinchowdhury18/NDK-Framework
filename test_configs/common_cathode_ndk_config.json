@@ -1,0 +1,40 @@
+{
+  "struct_name": "CommonCathodeNDK",
+  "netlist": [
+    "Vi 1 0",
+    "Rg 1 2",
+    "Y1 2 3 4 # GRID PLATE CATHODE",
+    "Rk 4 0",
+    "Ck 4 0",
+    "Cp 3 5",
+    "RL 5 0",
+    "Rp 3 6",
+    "Vcc 6 0 FIXED"
+  ],
+  "output_nodes": [ 4 ],
+  "header_includes": [
+    "#include <Eigen/Dense>"
+  ],
+  "cpp_struct_entries": [
+    "    static constexpr size_t MAX_NUM_CHANNELS = 1;"
+  ],
+  "cpp_namespace_entries": [
+    "    constexpr auto Rg = 33.0e3;",
+    "    constexpr auto Rk = 2.7e3;",
+    "    constexpr auto Ck = 0.68e-6;",
+    "    constexpr auto Cp = 0.01e-6;",
+    "    constexpr auto RL = 1.0e6;",
+    "    constexpr auto Rp = 100.0e3;",
+    "    constexpr auto Vcc = 380.0;",
+    "    constexpr auto Ep_Y1 = 1.156;",
+    "    constexpr auto Gam_Y1 = 1.349;",
+    "    constexpr auto G_Y1 = 1.371e-3;",
+    "    constexpr auto Gg_Y1 = 3.263e-4;",
+    "    constexpr auto C_Y1 = 4.56;",
+    "    constexpr auto Cg_Y1 = 11.99;",
+    "    constexpr auto My_Y1 = 86.9;",
+    "    constexpr auto Ig0_Y1 = 3.917e-8;"
+  ],
+  "initial_state_v_n": "0.78344928770096755, 76.237184998334257",
+  "nr_exit_condition": "delta > 1.0e-6 && ++nIters < 50"
+}

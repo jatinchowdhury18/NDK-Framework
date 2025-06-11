@@ -119,6 +119,20 @@ def generate_N_matrices(netlist_info: NetlistInfo, outputs):
             if el.nodes[0] > 0: node_map[el.nodes[0] - 1] = "+1" # positive node
             if el.nodes[1] > 0: node_map[el.nodes[1] - 1] = "-1" # negative node
             lines.append(f"        {{ {', '.join(node_map)} }},")
+        elif el.element is Element.Triode:
+            grid_node_idx = el.nodes[0] - 1
+            plate_node_idx = el.nodes[1] - 1
+            cathode_node_idx = el.nodes[2] - 1
+
+            node_map_cb = ["+0"] * netlist_info.num_nodes
+            if el.nodes[1] > 0: node_map_cb[grid_node_idx] = "+1" # positive node
+            if el.nodes[0] > 0: node_map_cb[cathode_node_idx] = "-1" # negative node
+            lines.append(f"        {{ {', '.join(node_map_cb)} }},")
+
+            node_map_ce = ["+0"] * netlist_info.num_nodes
+            if el.nodes[1] > 0: node_map_ce[plate_node_idx] = "+1" # positive node
+            if el.nodes[2] > 0: node_map_ce[cathode_node_idx] = "-1" # negative node
+            lines.append(f"        {{ {', '.join(node_map_ce)} }},")
 
     lines.append("    };\n")
 
@@ -299,7 +313,7 @@ def generate_process_sample(config_json, netlist_info: NetlistInfo, process_dtyp
     if netlist_info.num_nl_ports > 0:
         nl_elements = []
         for el in netlist_info.elements:
-            if el.element in [Element.Diode, Element.DiodePair, Element.Transistor]:
+            if el.element in [Element.Diode, Element.DiodePair, Element.Transistor, Element.Triode]:
                 nl_elements.append(el)
 
         for el in nl_elements:
@@ -331,6 +345,13 @@ def generate_process_sample(config_json, netlist_info: NetlistInfo, process_dtyp
                 lines.append(f"        T sinh_v{nl_idx};")
                 lines.append(f"        T cosh_v{nl_idx};")
                 nl_idx += 1
+            elif el.element is Element.Triode:
+                lines.append(f"        T exp_vg{nl_idx};")
+                lines.append(f"        T exp_va_vg{nl_idx};")
+                lines.append(f"        T log_vg_Cg{nl_idx};")
+                lines.append(f"        T log_va_vg_C{nl_idx};")
+                nl_idx += 2
+
 
         lines.append("        const auto calc_currents = [&]\n        {")
         nl_idx = 0
@@ -349,6 +370,14 @@ def generate_process_sample(config_json, netlist_info: NetlistInfo, process_dtyp
                 lines.append(f"            std::tie (sinh_v{nl_idx}, cosh_v{nl_idx}) = sinh_cosh (v_n[ch]({nl_idx}) / (n_{el.name} * Vt));")
                 lines.append(f"            i_n ({nl_idx}) = (T) 2 * -Is_{el.name} * sinh_v{nl_idx};")
                 nl_idx += 1
+            elif el.element is Element.Triode:
+                lines.append(f"            exp_vg{nl_idx} = std::exp (Cg_{el.name} * v_n[ch]({nl_idx}));")
+                lines.append(f"            log_vg_Cg{nl_idx} = (1.0 / Cg_{el.name}) * std::log (1.0 + exp_vg{nl_idx});")
+                lines.append(f"            exp_va_vg{nl_idx} = std::exp (C_{el.name} * ((1.0 / My_{el.name}) * v_n[ch]({nl_idx+1}) + v_n[ch]({nl_idx})));")
+                lines.append(f"            log_va_vg_C{nl_idx} = (1.0 / C_{el.name}) * std::log (1.0 + exp_va_vg{nl_idx});")
+                lines.append(f"            i_n ({nl_idx}) = Gg_{el.name} * std::pow (log_vg_Cg{nl_idx}, Ep_{el.name}) + Ig0_{el.name};")
+                lines.append(f"            i_n ({nl_idx+1}) = -G_{el.name} * std::pow (log_va_vg_C{nl_idx}, Gam_{el.name}) - i_n ({nl_idx});")
+                nl_idx += 2
             lines.append("")
         lines.pop()
         lines.append("        };\n")
@@ -368,6 +397,12 @@ def generate_process_sample(config_json, netlist_info: NetlistInfo, process_dtyp
             elif el.element is Element.DiodePair:
                 lines.append(f"            Jac ({nl_idx}, {nl_idx}) = ((T) 2 * -Is_{el.name} / (n_{el.name} * Vt)) * cosh_v{nl_idx};")
                 nl_idx += 1
+            elif el.element is Element.Triode:
+                lines.append(f"            Jac ({nl_idx}, {nl_idx}) = Gg_{el.name} * Ep_{el.name} * exp_vg{nl_idx} * std::pow (log_vg_Cg{nl_idx}, Ep_{el.name} - 1.0) / (exp_vg{nl_idx} + 1.0);")
+                lines.append(f"            Jac ({nl_idx}, {nl_idx+1}) = 0.0;")
+                lines.append(f"            Jac ({nl_idx+1}, {nl_idx}) = -G_{el.name} * Gam_{el.name} * exp_va_vg{nl_idx} * std::pow (log_va_vg_C{nl_idx}, Gam_{el.name} - 1.0) / (exp_va_vg{nl_idx} + 1.0) + Jac ({nl_idx}, {nl_idx});")
+                lines.append(f"            Jac ({nl_idx+1}, {nl_idx+1}) = (Jac ({nl_idx+1}, {nl_idx}) - Jac ({nl_idx}, {nl_idx})) / My_{el.name};")
+                nl_idx += 2
             lines.append("")
         lines.pop()
         lines.append("        };\n")

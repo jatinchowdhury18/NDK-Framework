@@ -3,6 +3,7 @@ build*/
 cmake-build*/
 .idea/
 .vscode/
+.DS_Store
 
 # Test-generated files
 *.png
@@ -10,3 +11,4 @@ tests/cry_baby_test/CryBabyNDK.*
 tests/big_muff_test/BigMuff*.*
 tests/rc_lowpass_test/RCLowpassNDK*.*
 tests/sk_lowpass_test/SKLowpassNDK*.*
+tests/common_cathode_test/CommonCathodeNDK*.*
