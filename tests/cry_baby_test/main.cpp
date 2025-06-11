@@ -1,3 +1,5 @@
+#include <span>
+#include <vector>
 #include <plt/matplotlibcpp.h>
 #include "../freq_response_helpers.h"
 
@@ -34,8 +36,9 @@ int main()
     output_data = std::vector<double> { input_data.begin(), input_data.end() };
     model.process (output_data, 0);
 
-    plt::semilogx (freq_helpers::fft_freqs (N / 2 + 1, sample_rate),
-                   freq_helpers::compute_frequency_response (input_data, output_data));
+    const auto fft_freqs = freq_helpers::fft_freqs (N / 2 + 1, sample_rate);
+    const auto freq_response = freq_helpers::compute_frequency_response (input_data, output_data);
+    plt::semilogx<double> (std::span { fft_freqs }, std::span { freq_response });
     plt::grid (true);
     plt::xlim (start_freq, stop_freq);
     plt::save ("cry_baby.png");
